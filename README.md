@@ -1,2 +1,9 @@
-# ruuvi-terminal-client
-Terminal client for displaying Ruuvi sensor data.
+Ruuvi terminal client
+=====================
+
+TODO: Compile instructions
+TODO: Usage
+
+ENV variables
+-------------
+API_URL
