@@ -1,9 +1,14 @@
 use pancurses::{initscr, endwin, Input, Window, COLOR_PAIR, COLOR_GREEN, COLOR_WHITE, COLOR_RED, start_color, init_pair, has_colors, A_BOLD, use_default_colors};
 use reqwest;
 use serde::Deserialize;
+use serde_json::Value;
 use chrono::{DateTime, Utc};
 use std::{thread, time};
 use std::env;
+
+mod formatters;
+use formatters::custom_ruuvi_api::parse_custom_ruuvi_api_format;
+use formatters::ruuvi_gateway::parse_ruuvi_gateway_format;
 
 #[derive(Debug, Deserialize)]
 struct Metric {
@@ -26,13 +31,29 @@ struct Tag {
 
 type ApiResponse = Vec<Tag>;
 
+enum BackendFormat {
+	RuuviGatewayHistory,
+	CustomRuuviApi,
+}
+
+struct Config {
+	api_url: String,
+	backend_format: BackendFormat,
+	name_mapping: HashMap<String, String>,
+}
+
 /**
  * Get data from the API.
 */
-fn fetch_data(api_url: &str) -> Result<ApiResponse, Box<dyn std::error::Error>> {
-	let response = reqwest::blocking::get(api_url)?;
-	let data: ApiResponse = response.json()?;
-	return Ok(data);
+fn fetch_data(config: &Config) -> Result<ApiResponse, Box<dyn std::error::Error>> {
+	let response = reqwest::blocking::get(&config.api_url)?;
+	let data: serde_json::Value = response.json()?;
+	//return Ok(data);
+	
+	match &config.backend_format {
+		BackendFormat::RuuviGatewayHistory => parse_ruuvi_gateway_format(&data),
+		BackendFormat::CustomRuuviApi => parse_custom_ruuvi_api_format(&data),
+	}
 }
 
 /**
@@ -137,12 +158,41 @@ fn format_time_ago(datetime: &str) -> String {
 }
 
 /**
+ * Create config.
+*/
+fn load_config() -> Config {
+	let api_url = env::var("API_URL")
+		.expect("Environment variable API_URL must be set");
+
+	let backend_format = match env::var("BACKEND_FORMAT")
+		.unwrap_or_else(|_| "custom".to_string())
+		.to_lowercase()
+		.as_str() {
+			"ruuvi-gateway-history" => BackendFormat::RuuviGatewayHistory,
+			"custom" | _ => BackendFormat::CustomRuuviApi,
+	};
+
+	/*
+	// Load names from names.json if exists (optional)
+	let name_mapping = match std::fs::read_to_string("names.json") {
+		Ok(content) => serde_json::from_str(&content).unwrap_or_default(),
+		Err(_) => HashMap::new(),
+	};
+	*/
+
+	return Config {
+		api_url,
+		backend_format,
+		name_mapping,
+	}
+}
+
+/**
  * Main.
 */
 fn main() {
-	// First check the API URL ENV.
-	let api_url = env::var("API_URL")
-		.expect("Environment variable API_URL must be set");
+	// Do configuration.
+	let config = load_config();
 	let mut network_error = false;
 	let mut last_refresh = Utc::now() - chrono::Duration::minutes(1);
 	let mut data: ApiResponse = Vec::new();
@@ -169,7 +219,7 @@ fn main() {
 	loop {
 		let now = Utc::now();
 		if (now - last_refresh).num_seconds() >= 60 {
-			match fetch_data(&api_url) {
+			match fetch_data(&config) {
 				Ok(new_data) => {
 					data = new_data;
 					last_refresh = now;
