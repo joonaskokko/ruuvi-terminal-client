@@ -1,4 +1,4 @@
-use pancurses::{initscr, endwin, Input, Window, COLOR_PAIR, COLOR_GREEN, COLOR_WHITE, COLOR_RED, start_color, init_pair, has_colors, A_BOLD, use_default_colors};
+use pancurses::{Input, Window, COLOR_PAIR, COLOR_GREEN, COLOR_WHITE, COLOR_RED, A_BOLD};
 use reqwest;
 use serde::Deserialize;
 use chrono::{DateTime, Utc};
@@ -21,10 +21,27 @@ struct Tag {
 	temperature: Metric,
 	humidity: Metric,
 	battery_low: bool,
+	unreachable: bool,
 	tag_name: String,
 }
 
 type ApiResponse = Vec<Tag>;
+
+/**
+ * Wrapper for setting up the terminal.
+*/
+fn setup_terminal() -> Window {
+	let window = pancurses::initscr();
+	pancurses::start_color();
+	pancurses::use_default_colors(); 	// This is needed. If not set, the background color will be forced black instead of terminal color.
+	pancurses::init_pair(1, COLOR_WHITE, -1);
+	pancurses::init_pair(2, COLOR_GREEN, -1);
+	pancurses::init_pair(3, COLOR_RED, -1);
+	
+	window.nodelay(true);
+	
+	return window;
+}
 
 /**
  * Get data from the API.
@@ -52,6 +69,12 @@ fn render(window: &Window, data: &ApiResponse, network_error: bool) {
 			window.addstr(" ");
 			window.attron(COLOR_PAIR(3) | A_BOLD);
 			window.addstr("Battery low");
+			window.attroff(COLOR_PAIR(3) | A_BOLD);
+		}
+		else if (tag.unreachable) {
+			window.addstr(" ");
+			window.attron(COLOR_PAIR(3) | A_BOLD);
+			window.addstr("Unreachable");
 			window.attroff(COLOR_PAIR(3) | A_BOLD);
 		}
 		
@@ -119,20 +142,20 @@ fn format_time_ago(datetime: &str) -> String {
 		let seconds = (now - parsed).num_seconds();
 
 		if (seconds < 60) {
-			format!("{} seconds ago", seconds)
+			return format!("{} seconds ago", seconds)
 		}
 		else if seconds < 3600 {
-			format!("{} minutes ago", seconds / 60)
+			return format!("{} minutes ago", seconds / 60)
 		}
 		else if seconds < 86400 {
-			format!("{} hours ago", seconds / 3600)
+			return format!("{} hours ago", seconds / 3600)
 		}
 		else {
-			format!("{} days ago", seconds / 86400)
+			return format!("{} days ago", seconds / 86400)
 		}
 	}
 	else {
-		"unknown".into() // &str to String.
+		return "unknown".into() // &str to String.
 	}
 }
 
@@ -147,23 +170,7 @@ fn main() {
 	let mut last_refresh = Utc::now() - chrono::Duration::minutes(1);
 	let mut data: ApiResponse = Vec::new();
 	
-	let window = initscr();
-	
-	start_color();
-
-	if (!has_colors()) {
-		println!("Your terminal does not support colors.");
-		return;
-	}
-
-	// This is needed. If not set, the background color will be forced black instead of terminal color.
-	use_default_colors();
-	window.nodelay(true);
-	
-	// Set color pairs. -1 is transparent background.
-	init_pair(1, COLOR_WHITE, -1);
-	init_pair(2, COLOR_GREEN, -1);
-	init_pair(3, COLOR_RED, -1);
+	let window = setup_terminal();
 
 	// Main loop.
 	loop {
@@ -191,5 +198,5 @@ fn main() {
 		thread::sleep(time::Duration::from_secs(1));
 	}
 
-	endwin();
+	pancurses::endwin();
 }
