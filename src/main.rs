@@ -15,7 +15,6 @@ struct Metric {
 
 #[derive(Debug, Deserialize)]
 struct Tag {
-	id: u32,
 	tag_id: u32,
 	datetime: String,
 	temperature: Metric,
