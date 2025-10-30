@@ -75,7 +75,7 @@ fn render(window: &Window, data: &ApiResponse, network_error: bool) {
 	for tag in data {
 		// Title row.
 		window.attron(COLOR_PAIR(2) | A_BOLD);
-		window.addstr(&tag.tag_name);
+		window.addstr(if tag.tag_name.is_empty() { "Unknown tag" } else { &tag.tag_name }); // If the tag name is empty.
 		window.attroff(COLOR_PAIR(2) | A_BOLD);
 		
 		// Battery low indicator.
