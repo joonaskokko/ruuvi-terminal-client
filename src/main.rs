@@ -10,6 +10,7 @@ use pancurses::{Input, Window, COLOR_PAIR, COLOR_GREEN, COLOR_WHITE, COLOR_RED, 
 use reqwest;
 use chrono::{DateTime, Utc};
 use std::{thread, time};
+use std::process::ExitCode;
 
 use config::load_config;
 use models::Tag;
@@ -159,7 +160,7 @@ fn format_time_ago(datetime: &str) -> String {
 /**
  * Main.
  */
-fn main() {
+fn main() -> ExitCode {
 	let config = load_config()
 		.expect("Failed to load configuration");
 	let api_url = config.api_url;
@@ -200,4 +201,7 @@ fn main() {
 	}
 
 	pancurses::endwin();
+
+	// Explicit return code 0.
+	return ExitCode::SUCCESS;
 }
