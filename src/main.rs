@@ -1,4 +1,6 @@
+// These are here so Cargo won't nag about parenthesis in IFs or unused code.
 #![allow(unused_parens)]
+#![allow(warnings)]
 
 mod config;
 mod models;
