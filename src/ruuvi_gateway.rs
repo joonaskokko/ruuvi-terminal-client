@@ -1,6 +1,6 @@
 use serde::Deserialize;
 use chrono::{DateTime, Utc};
-use crate::models::{Tag, SensorData};
+use crate::{Tag, SensorData};
 use std::collections::HashMap;
 
 #[derive(Debug, Deserialize)]

@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::models::{Tag, SensorData};
+use crate::{Tag, SensorData};
 use std::collections::HashMap;
 
 #[derive(Debug, Deserialize, Clone)]
@@ -21,7 +21,7 @@ struct RuuviApiTag {
 	tag_name: String,
 }
 
-pub fn parse_ruuvi_api(data: &str, _tag_names: &HashMap<String, String>) -> Result<Vec<Tag>, Box<dyn std::error::Error>> {
+pub fn parse_ruuvi_custom_api(data: &str, _tag_names: &HashMap<String, String>) -> Result<Vec<Tag>, Box<dyn std::error::Error>> {
 	let tags: Vec<RuuviApiTag> = serde_json::from_str(data)?;
 
 	let unified = tags.into_iter().map(|tag| Tag {

@@ -1,4 +1,4 @@
-use crate::models::Tag;
+use crate::Tag;
 
 pub struct TrendTracker {
 	previous_tags: Option<Vec<Tag>>,

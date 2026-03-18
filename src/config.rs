@@ -48,7 +48,7 @@ pub fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
 		return Err("API URL cannot be empty".into());
 	}
 
-	print!("Enter API type (ruuvi_api/ruuvi_gateway) [default: ruuvi_gateway]: ");
+	print!("Enter API type (ruuvi_custom_api/ruuvi_gateway) [default: ruuvi_gateway]: ");
 	io::stdout().flush().unwrap();
 
 	let mut api_type = String::new();

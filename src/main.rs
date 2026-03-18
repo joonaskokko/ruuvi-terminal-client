@@ -1,10 +1,10 @@
 // These are here so Cargo won't nag about parenthesis in IFs or unused code.
 #![allow(unused_parens)]
 #![allow(warnings)]
+#[allow(dead_code)]
 
 mod config;
-mod models;
-mod ruuvi_api;
+mod ruuvi_custom_api;
 mod ruuvi_gateway;
 mod trends;
 
@@ -15,8 +15,26 @@ use std::{thread, time};
 use std::process::ExitCode;
 
 use config::load_config;
-use models::Tag;
 use trends::TrendTracker;
+
+#[derive(Debug, Clone)]
+pub struct SensorData {
+	pub current: f64,
+	pub min: Option<f64>,
+	pub max: Option<f64>,
+	pub trend: Option<i8>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Tag {
+	pub tag_id: String,
+	pub tag_name: String,
+	pub temperature: SensorData,
+	pub humidity: SensorData,
+	pub battery_low: bool,
+	pub unreachable: bool,
+	pub datetime: String,
+}
 
 type ApiResponse = Vec<Tag>;
 
@@ -44,7 +62,7 @@ fn fetch_data(api_url: &str, api_type: &str, tag_names: &std::collections::HashM
 	let data = response.text()?;
 
 	match api_type {
-		"ruuvi_api" => ruuvi_api::parse_ruuvi_api(&data, tag_names),
+		"ruuvi_custom_api" => ruuvi_custom_api::parse_ruuvi_custom_api(&data, tag_names),
 		"ruuvi_gateway" => ruuvi_gateway::parse_ruuvi_gateway(&data, tag_names),
 		_ => Err(format!("Unknown API type: {}", api_type).into()),
 	}
