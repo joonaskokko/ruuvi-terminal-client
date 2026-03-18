@@ -28,4 +28,4 @@
 - The codebase prioritizes explicit, verbose code for learning purposes
 - Avoid implicit returns and shorthand syntax
 - Code clarity and readability are more important than conciseness
-- Suppress warnings when compiling with cargo build
+- Suppress warnings when compiling with cargo build for easier compilation error debugging

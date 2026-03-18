@@ -1,44 +1,46 @@
+// These are here so Cargo won't nag about parenthesis in IFs or unused code.
 #![allow(unused_parens)]
+#![allow(warnings)]
+#[allow(dead_code)]
+
+mod config;
+mod ruuvi_custom_api;
+mod ruuvi_gateway;
+mod trends;
 
 use pancurses::{Input, Window, COLOR_PAIR, COLOR_GREEN, COLOR_WHITE, COLOR_RED, A_BOLD};
 use reqwest;
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 use std::{thread, time};
-use std::env;
-use std::fs;
-use std::io::{self, Write};
-use dirs;
+use std::process::ExitCode;
 
-#[derive(Debug, Deserialize)]
-struct Metric {
-	current: f64,
-	min: f64,
-	max: f64,
-	trend: i8,
+use config::load_config;
+use trends::TrendTracker;
+
+#[derive(Debug, Clone)]
+pub struct SensorData {
+	pub current: f64,
+	pub min: Option<f64>,
+	pub max: Option<f64>,
+	pub trend: Option<i8>,
 }
 
-#[derive(Debug, Deserialize)]
-struct Tag {
-	tag_id: u32,
-	datetime: String,
-	temperature: Metric,
-	humidity: Metric,
-	battery_low: bool,
-	unreachable: bool,
-	tag_name: String,
+#[derive(Debug, Clone)]
+pub struct Tag {
+	pub tag_id: String,
+	pub tag_name: String,
+	pub temperature: SensorData,
+	pub humidity: SensorData,
+	pub battery_low: bool,
+	pub unreachable: bool,
+	pub datetime: String,
 }
 
 type ApiResponse = Vec<Tag>;
 
-#[derive(Debug, Deserialize, Serialize)]
-struct Config {
-	api_url: String,
-}
-
 /**
  * Wrapper for setting up the terminal.
-*/
+ */
 fn setup_terminal() -> Window {
 	let window = pancurses::initscr();
 	pancurses::start_color();
@@ -54,23 +56,28 @@ fn setup_terminal() -> Window {
 
 /**
  * Get data from the API.
-*/
-fn fetch_data(api_url: &str) -> Result<ApiResponse, Box<dyn std::error::Error>> {
+ */
+fn fetch_data(api_url: &str, api_type: &str, tag_names: &std::collections::HashMap<String, String>) -> Result<ApiResponse, Box<dyn std::error::Error>> {
 	let response = reqwest::blocking::get(api_url)?;
-	let data: ApiResponse = response.json()?;
-	return Ok(data);
+	let data = response.text()?;
+
+	match api_type {
+		"ruuvi_custom_api" => ruuvi_custom_api::parse_ruuvi_custom_api(&data, tag_names),
+		"ruuvi_gateway" => ruuvi_gateway::parse_ruuvi_gateway(&data, tag_names),
+		_ => Err(format!("Unknown API type: {}", api_type).into()),
+	}
 }
 
 /**
  * The main render function.
-*/
+ */
 fn render(window: &Window, data: &ApiResponse, network_error: bool) {
 	window.clear();
 
 	for tag in data {
 		// Title row.
 		window.attron(COLOR_PAIR(2) | A_BOLD);
-		window.addstr(if tag.tag_name.is_empty() { "Unknown tag" } else { &tag.tag_name }); // If the tag name is empty.
+		window.addstr(&tag.tag_name);
 		window.attroff(COLOR_PAIR(2) | A_BOLD);
 
 		// Battery low indicator.
@@ -108,12 +115,14 @@ fn render(window: &Window, data: &ApiResponse, network_error: bool) {
 
 		window.addstr("\n");
 
-		// Temperature min/max.
-		window.addstr(&format!(
-			"{:+.2}…{:+.2}°C\n",
-			tag.temperature.min,
-			tag.temperature.max
-		));
+		// Temperature min/max (only if available).
+		if let (Some(min), Some(max)) = (tag.temperature.min, tag.temperature.max) {
+			window.addstr(&format!(
+				"{:+.2}…{:+.2}°C\n",
+				min,
+				max
+			));
+		}
 
 		// Updated string.
 		window.addstr("Updated: ");
@@ -132,19 +141,19 @@ fn render(window: &Window, data: &ApiResponse, network_error: bool) {
 }
 
 /**
- * Helper function for helper arrow mapping.
-*/
-fn trend_arrow(trend: i8) -> &'static str {
+ * Helper function for trend arrow mapping.
+ */
+fn trend_arrow(trend: Option<i8>) -> &'static str {
 	match trend {
-		1 => "▴",
-		-1 => "▾",
-		_ => "▸",
+		Some(1) => "▴",
+		Some(-1) => "▾",
+		Some(_) | None => "▸",
 	}
 }
 
 /**
  * Get human readable time ago.
-*/
+ */
 fn format_time_ago(datetime: &str) -> String {
 	if let Ok(parsed) = datetime.parse::<DateTime<Utc>>() {
 		let now = Utc::now();
@@ -169,64 +178,18 @@ fn format_time_ago(datetime: &str) -> String {
 }
 
 /**
- * Load configuration with priority order:
- * 1. Environment variable API_URL.
- * 2. Config file at ~/.config/ruuvi-terminal-client/config.yml.
- * 3. Interactive prompt if no config file is present.
-*/
-fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
-	// Check ENV variable first as it overrides the config.
-	if let Ok(api_url) = env::var("API_URL") {
-		return Ok(Config { api_url });
-	}
-
-	// Get config file path.
-	let config_path = dirs::config_dir()
-		.map(|dir| dir.join("ruuvi-terminal-client").join("config.yml"));
-
-	// Check if config file exists.
-	if let Some(ref path) = config_path {
-		if path.exists() {
-			let config_content = fs::read_to_string(&path)?;
-			let config: Config = serde_yaml::from_str(&config_content)?;
-			return Ok(config);
-		}
-	}
-
-	// Ask user if no config file found or no ENV present.
-	print!("Enter API URL: ");
-	io::stdout().flush().unwrap();
-
-	let mut api_url = String::new();
-	io::stdin().read_line(&mut api_url)?;
-	let api_url = api_url.trim().to_string();
-
-	if api_url.is_empty() {
-		return Err("API URL cannot be empty".into());
-	}
-
-	// Save to config file now that we have the API URL.
-	if let Some(path) = config_path {
-		if let Some(parent) = path.parent() {
-			fs::create_dir_all(parent)?;
-		}
-		let config_yaml = serde_yaml::to_string(&Config { api_url: api_url.clone() })?;
-		fs::write(&path, config_yaml)?;
-	}
-
-	return Ok(Config { api_url });
-}
-
-/**
  * Main.
-*/
-fn main() {
+ */
+fn main() -> ExitCode {
 	let config = load_config()
 		.expect("Failed to load configuration");
 	let api_url = config.api_url;
+	let api_type = config.api_type;
+	let tag_names = config.tag_names;
 	let mut network_error = false;
 	let mut last_refresh = Utc::now() - chrono::Duration::minutes(1);
 	let mut data: ApiResponse = Vec::new();
+	let mut trend_tracker = TrendTracker::new();
 
 	let window = setup_terminal();
 
@@ -234,8 +197,9 @@ fn main() {
 	loop {
 		let now = Utc::now();
 		if (now - last_refresh).num_seconds() >= 60 {
-			match fetch_data(&api_url) {
-				Ok(new_data) => {
+			match fetch_data(&api_url, &api_type, &tag_names) {
+				Ok(mut new_data) => {
+					trend_tracker.update_trends(&mut new_data);
 					data = new_data;
 					last_refresh = now;
 					network_error = false;
@@ -257,4 +221,7 @@ fn main() {
 	}
 
 	pancurses::endwin();
+
+	// Explicit return code 0.
+	return ExitCode::SUCCESS;
 }
