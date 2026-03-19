@@ -124,7 +124,7 @@ fn fetch_data(api_url: &str, api_type: &str, tag_names: &std::collections::HashM
 fn render(window: &Window, data: &ApiResponse, network_error: bool, border_style: &str) {
 	window.clear();
 
-	let maximum_width = window.get_max_x() - 1;
+	let maximum_width = window.get_max_x();
 	let draw_border = border_style == "line";
 
 	for tag in data {
