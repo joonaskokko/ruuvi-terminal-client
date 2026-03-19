@@ -9,8 +9,8 @@ pub fn render(window: &Window, data: &ApiResponse, network_error: bool, border_s
 	window.clear();
 
 	// Terminal width and if we should draw a border or not.
-	let terminal_width = window.get_max_x();
-	let draw_border = border_style != "none";
+	let terminal_width: i32 = window.get_max_x();
+	let draw_border: bool = border_style != "none";
 
 	for tag in data {
 		render_tag_card(window, tag, terminal_width, draw_border);
@@ -28,7 +28,7 @@ pub fn render(window: &Window, data: &ApiResponse, network_error: bool, border_s
  */
 fn render_tag_card(window: &Window, tag: &crate::Tag, terminal_width: i32, draw_border: bool) -> () {
 	if (draw_border) {
-		let top_border_line = draw_horizontal_line("top", terminal_width);
+		let top_border_line: String = get_horisontal_border("top", terminal_width);
 		window.addstr(&format!("{}", top_border_line));
 	}
 
@@ -42,7 +42,7 @@ fn render_tag_card(window: &Window, tag: &crate::Tag, terminal_width: i32, draw_
 	render_updated_row(window, &tag.datetime, terminal_width, draw_border);
 
 	if (draw_border) {
-		let bottom_border_line = draw_horizontal_line("bottom", terminal_width);
+		let bottom_border_line = get_horisontal_border("bottom", terminal_width);
 		window.addstr(&format!("{}", bottom_border_line));
 	} else {
 		window.addstr("\n");
@@ -202,9 +202,9 @@ fn display_width(string_value: &str) -> usize {
 }
 
 /**
- * Draw a horizontal line for a box given width.
+ * Get a horisontal border line with corner symbols.
  */
-fn draw_horizontal_line(line_type: &str, width: i32) -> String {
+fn get_horisontal_border(line_type: &str, width: i32) -> String {
 	let (left, right, fill) = match line_type {
 		"top" => ("┌", "┐", "─"),
 		"bottom" => ("└", "┘", "─"),
