@@ -5,7 +5,7 @@ use crate::ApiResponse;
 /**
  * Main render function - orchestrates the entire UI rendering.
  */
-pub fn render(window: &Window, data: &ApiResponse, network_error: bool, border_style: &str) {
+pub fn render(window: &Window, data: &ApiResponse, network_error: bool, border_style: &str) -> () {
 	window.clear();
 
 	// Terminal width and if we should draw a border or not.
@@ -21,13 +21,12 @@ pub fn render(window: &Window, data: &ApiResponse, network_error: bool, border_s
 	}
 
 	window.refresh();
-	return;
 }
 
 /**
  * Render a complete tag card with all sections.
  */
-fn render_tag_card(window: &Window, tag: &crate::Tag, terminal_width: i32, draw_border: bool) {
+fn render_tag_card(window: &Window, tag: &crate::Tag, terminal_width: i32, draw_border: bool) -> () {
 	if (draw_border) {
 		let top_border_line = draw_horizontal_line("top", terminal_width);
 		window.addstr(&format!("{}", top_border_line));
@@ -53,7 +52,7 @@ fn render_tag_card(window: &Window, tag: &crate::Tag, terminal_width: i32, draw_
 /**
  * Render the tag header with name and status indicators.
  */
-fn render_tag_header(window: &Window, tag: &crate::Tag, terminal_width: i32, draw_border: bool) {
+fn render_tag_header(window: &Window, tag: &crate::Tag, terminal_width: i32, draw_border: bool) -> () {
 	let left_border_string = if draw_border { "│ " } else { "" };
 	window.addstr(left_border_string);
 	let mut title_line_length = if draw_border { 2 } else { 0 };
@@ -91,7 +90,7 @@ fn render_tag_header(window: &Window, tag: &crate::Tag, terminal_width: i32, dra
 /**
  * Render the sensor values row (temperature and humidity with trends).
  */
-fn render_sensor_row(window: &Window, tag: &crate::Tag, terminal_width: i32, draw_border: bool) {
+fn render_sensor_row(window: &Window, tag: &crate::Tag, terminal_width: i32, draw_border: bool) -> () {
 	let left_border_string = if draw_border { "│ " } else { "" };
 	window.addstr(left_border_string);
 	let mut sensor_line_length = if draw_border { 2 } else { 0 };
@@ -134,7 +133,7 @@ fn render_sensor_row(window: &Window, tag: &crate::Tag, terminal_width: i32, dra
 /**
  * Render the min/max temperature row (only shown if data is available).
  */
-fn render_minmax_row(window: &Window, min: f64, max: f64, terminal_width: i32, draw_border: bool) {
+fn render_minmax_row(window: &Window, min: f64, max: f64, terminal_width: i32, draw_border: bool) -> () {
 	let left_border_string = if draw_border { "│ " } else { "" };
 	window.addstr(left_border_string);
 
@@ -153,7 +152,7 @@ fn render_minmax_row(window: &Window, min: f64, max: f64, terminal_width: i32, d
 /**
  * Render the last updated timestamp row.
  */
-fn render_updated_row(window: &Window, datetime: &str, terminal_width: i32, draw_border: bool) {
+fn render_updated_row(window: &Window, datetime: &str, terminal_width: i32, draw_border: bool) -> () {
 	let left_border_string = if draw_border { "│ " } else { "" };
 	window.addstr(left_border_string);
 	let mut update_line_length = if draw_border { 2 } else { 0 };
@@ -176,18 +175,17 @@ fn render_updated_row(window: &Window, datetime: &str, terminal_width: i32, draw
 /**
  * Render network error message.
  */
-fn render_error_message(window: &Window) {
+fn render_error_message(window: &Window) -> () {
 	window.attron(COLOR_PAIR(3) | A_BOLD);
 	window.addstr("Network error\n");
 	window.attroff(COLOR_PAIR(3) | A_BOLD);
-	return;
 }
 
 /**
  * Helper function for trend arrow mapping.
  */
 fn trend_arrow(trend: Option<i8>) -> &'static str {
-	match trend {
+	return match trend {
 		Some(1) => "▴",
 		Some(-1) => "▾",
 		Some(_) | None => "▸",
@@ -213,7 +211,7 @@ fn draw_horizontal_line(line_type: &str, width: i32) -> String {
 		_ => ("", "", ""),
 	};
 
-	// - 2 so we can fit the turn symbol.
+	// - 2 so we can fit the corner symbols.
 	let fill_width = (width - 2).max(0) as usize;
 	let fill_string = fill.repeat(fill_width);
 	return format!("{}{}{}", left, fill_string, right);

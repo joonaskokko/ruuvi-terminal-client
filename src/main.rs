@@ -14,6 +14,7 @@ use reqwest;
 use chrono::{DateTime, Utc};
 use std::{thread, time};
 use std::process::ExitCode;
+use std::collections::HashMap;
 
 use config::load_config;
 use trends::TrendTracker;
@@ -46,11 +47,11 @@ type ApiResponse = Vec<Tag>;
 fn main() -> ExitCode {
 	let config = load_config()
 		.expect("Failed to load configuration");
-	let api_url = config.api_url;
-	let api_type = config.api_type;
-	let tag_names = config.tag_names;
-	let border_style = config.border;
-	let mut network_error = false;
+	let api_url: String = config.api_url;
+	let api_type: String = config.api_type;
+	let tag_names: HashMap<String, String> = config.tag_names;
+	let border_style: String = config.border;
+	let mut network_error: bool = false;
 	let mut last_refresh = Utc::now() - chrono::Duration::minutes(1);
 	let mut data: ApiResponse = Vec::new();
 	let mut trend_tracker = TrendTracker::new();
