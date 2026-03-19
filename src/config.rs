@@ -11,10 +11,16 @@ pub struct Config {
 	pub api_type: String,
 	#[serde(default)]
 	pub tag_names: HashMap<String, String>,
+	#[serde(default = "default_border")]
+	pub border: String,
 }
 
 fn default_api_type() -> String {
 	"ruuvi_gateway".to_string()
+}
+
+fn default_border() -> String {
+	"line".to_string()
 }
 
 /**
@@ -60,10 +66,26 @@ pub fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
 		api_type
 	};
 
+	print!("Enter border style (0: none, 1: line) [default: 1]: ");
+	io::stdout().flush().unwrap();
+
+	let mut border_choice = String::new();
+	io::stdin().read_line(&mut border_choice)?;
+	let border_choice = border_choice.trim().to_string();
+	let border_style = match border_choice.as_str() {
+		"0" => "none".to_string(),
+		"" | "1" => "line".to_string(),
+		_ => {
+			println!("Invalid choice, using default (line)");
+			"line".to_string()
+		}
+	};
+
 	let config = Config {
 		api_url: api_url.clone(),
 		api_type: api_type.clone(),
 		tag_names: HashMap::new(),
+		border: border_style,
 	};
 
 	// Save to config file now that we have the settings.
