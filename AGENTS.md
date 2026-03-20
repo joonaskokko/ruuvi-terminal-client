@@ -25,14 +25,25 @@
 	```
 
 ### Variable naming
-- **All variables should have full words in them and not shortened. Exceptions: "min" and "max" can be used.**
+- **All variables MUST have full words in them and not shortened. Exceptions: "min" and "max" can be used.**
 - **Good:**
 	```rust
-	let temperature_string = format!("{:+.2}°C", tag.temperature.current);
+	let temperature_string: String = format!("{:+.2}°C", tag.temperature.current);
 	```
 - **Bad:**
 	```rust
-	let tmp_str = format!("{:+.2}°C", tag.tmp.current);
+	let tmp_str: String = format!("{:+.2}°C", tag.tmp.current);
+	```
+
+### Variable typing
+- **All variables MUST have explicit type when declaring.**
+- **Good:**
+	```rust
+	let number: u32 = 16;
+	```
+- **Bad:**
+	```rust
+	let number = 16;
 	```
 
 ### General Notes
