@@ -53,14 +53,14 @@ fn render_tag_card(window: &Window, tag: &crate::Tag, terminal_width: i32, draw_
  * Render the tag header with name and status indicators.
  */
 fn render_tag_header(window: &Window, tag: &crate::Tag, terminal_width: i32, draw_border: bool) -> () {
-	let left_border_string = if draw_border { "│ " } else { "" };
+	let left_border_string = if draw_border { "│" } else { "" };
 	window.addstr(left_border_string);
-	let mut title_line_length = if draw_border { 2 } else { 0 };
+	let mut title_line_length = get_string_length(left_border_string);
 
 	window.attron(COLOR_PAIR(2) | A_BOLD);
 	window.addstr(&tag.tag_name);
 	window.attroff(COLOR_PAIR(2) | A_BOLD);
-	title_line_length += display_width(&tag.tag_name);
+	title_line_length += get_string_length(&tag.tag_name);
 
 	if (tag.battery_low) {
 		window.addstr(" ");
@@ -68,7 +68,7 @@ fn render_tag_header(window: &Window, tag: &crate::Tag, terminal_width: i32, dra
 		window.attron(COLOR_PAIR(3) | A_BOLD);
 		window.addstr("Battery low");
 		window.attroff(COLOR_PAIR(3) | A_BOLD);
-		title_line_length += display_width("Battery low");
+		title_line_length += get_string_length("Battery low");
 	}
 	else if (tag.unreachable) {
 		window.addstr(" ");
@@ -76,7 +76,7 @@ fn render_tag_header(window: &Window, tag: &crate::Tag, terminal_width: i32, dra
 		window.attron(COLOR_PAIR(3) | A_BOLD);
 		window.addstr("Unreachable");
 		window.attroff(COLOR_PAIR(3) | A_BOLD);
-		title_line_length += display_width("Unreachable");
+		title_line_length += get_string_length("Unreachable");
 	}
 
 	if (draw_border) {
@@ -91,21 +91,21 @@ fn render_tag_header(window: &Window, tag: &crate::Tag, terminal_width: i32, dra
  * Render the sensor values row (temperature and humidity with trends).
  */
 fn render_sensor_row(window: &Window, tag: &crate::Tag, terminal_width: i32, draw_border: bool) -> () {
-	let left_border_string = if draw_border { "│ " } else { "" };
+	let left_border_string = if draw_border { "│" } else { "" };
 	window.addstr(left_border_string);
-	let mut sensor_line_length = if draw_border { 2 } else { 0 };
+	let mut sensor_line_length = get_string_length(left_border_string);
 
 	window.attron(COLOR_PAIR(1) | A_BOLD);
 	let temperature_string = format!("{:+.2}°C", tag.temperature.current);
 	window.addstr(&temperature_string);
 	window.attroff(COLOR_PAIR(1) | A_BOLD);
-	sensor_line_length += display_width(&temperature_string);
+	sensor_line_length += get_string_length(&temperature_string);
 
 	window.attron(COLOR_PAIR(2) | A_BOLD);
 	let temperature_trend_symbol = trend_arrow(tag.temperature.trend);
 	window.addstr(temperature_trend_symbol);
 	window.attroff(COLOR_PAIR(2) | A_BOLD);
-	sensor_line_length += display_width(temperature_trend_symbol);
+	sensor_line_length += get_string_length(temperature_trend_symbol);
 
 	window.addstr(" ");
 	sensor_line_length += 1;
@@ -114,13 +114,13 @@ fn render_sensor_row(window: &Window, tag: &crate::Tag, terminal_width: i32, dra
 	let humidity_string = format!("{:.2}%", tag.humidity.current);
 	window.addstr(&humidity_string);
 	window.attroff(COLOR_PAIR(1) | A_BOLD);
-	sensor_line_length += display_width(&humidity_string);
+	sensor_line_length += get_string_length(&humidity_string);
 
 	window.attron(COLOR_PAIR(2) | A_BOLD);
 	let humidity_trend_symbol = trend_arrow(tag.humidity.trend);
 	window.addstr(humidity_trend_symbol);
 	window.attroff(COLOR_PAIR(2) | A_BOLD);
-	sensor_line_length += display_width(humidity_trend_symbol);
+	sensor_line_length += get_string_length(humidity_trend_symbol);
 
 	if (draw_border) {
 		window.addstr(&get_box_padding(sensor_line_length, terminal_width));
@@ -134,14 +134,14 @@ fn render_sensor_row(window: &Window, tag: &crate::Tag, terminal_width: i32, dra
  * Render the min/max temperature row (only shown if data is available).
  */
 fn render_minmax_row(window: &Window, min: f64, max: f64, terminal_width: i32, draw_border: bool) -> () {
-	let left_border_string = if draw_border { "│ " } else { "" };
+	let left_border_string = if draw_border { "│" } else { "" };
 	window.addstr(left_border_string);
 
 	let minmax_string = format!("{:+.2}…{:+.2}°C", min, max);
 	window.addstr(&minmax_string);
 
 	if (draw_border) {
-		let minmax_line_length = if draw_border { 2 } else { 0 } + display_width(&minmax_string);
+		let minmax_line_length = get_string_length(&minmax_string) + get_string_length(&left_border_string);
 		window.addstr(&get_box_padding(minmax_line_length, terminal_width));
 	}
 	else {
@@ -153,16 +153,16 @@ fn render_minmax_row(window: &Window, min: f64, max: f64, terminal_width: i32, d
  * Render the last updated timestamp row.
  */
 fn render_updated_row(window: &Window, datetime: &str, terminal_width: i32, draw_border: bool) -> () {
-	let left_border_string = if draw_border { "│ " } else { "" };
+	let left_border_string = if draw_border { "│" } else { "" };
 	window.addstr(left_border_string);
-	let mut update_line_length = if draw_border { 2 } else { 0 };
+	let mut update_line_length = get_string_length(&left_border_string);
 
 	window.addstr("Updated: ");
-	update_line_length += display_width("Updated: ");
+	update_line_length += get_string_length("Updated: ");
 
 	let time_ago_string = format_time_ago(datetime);
 	window.addstr(&time_ago_string);
-	update_line_length += display_width(&time_ago_string);
+	update_line_length += get_string_length(&time_ago_string);
 
 	if (draw_border) {
 		window.addstr(&get_box_padding(update_line_length, terminal_width));
@@ -197,7 +197,7 @@ fn trend_arrow(trend: Option<i8>) -> &'static str {
  * Most characters are 1 width, but some Unicode characters might be different.
  * For our use case, we'll count grapheme clusters properly.
  */
-fn display_width(string_value: &str) -> usize {
+fn get_string_length(string_value: &str) -> usize {
 	return string_value.chars().count()
 }
 
