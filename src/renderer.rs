@@ -6,7 +6,7 @@ use crate::ApiResponse;
  * Main render function - orchestrates the entire UI rendering.
  */
 pub fn render(window: &Window, data: &ApiResponse, network_error: bool, border_style: &str) -> () {
-	window.clear();
+	window.erase();
 
 	// Terminal width and if we should draw a border or not.
 	let terminal_width: i32 = window.get_max_x();
