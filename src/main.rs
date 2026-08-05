@@ -9,7 +9,7 @@ mod ruuvi_gateway;
 mod trends;
 mod renderer;
 
-use pancurses::{Input, Window, COLOR_PAIR, COLOR_GREEN, COLOR_WHITE, COLOR_RED, A_BOLD};
+use pancurses::{Input, Window, COLOR_PAIR, COLOR_GREEN, COLOR_WHITE, COLOR_YELLOW, COLOR_RED, A_BOLD};
 use reqwest;
 use chrono::{DateTime, Utc};
 use std::{thread, time};
@@ -101,6 +101,7 @@ fn setup_terminal() -> Window {
 	pancurses::init_pair(1, COLOR_WHITE, -1);
 	pancurses::init_pair(2, COLOR_GREEN, -1);
 	pancurses::init_pair(3, COLOR_RED, -1);
+	pancurses::init_pair(4, COLOR_YELLOW, -1);
 
 	window.nodelay(true);
 

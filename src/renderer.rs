@@ -1,4 +1,4 @@
-use pancurses::{Window, COLOR_PAIR, COLOR_GREEN, COLOR_WHITE, COLOR_RED, A_BOLD};
+use pancurses::{Window, COLOR_PAIR, A_BOLD};
 use chrono::{DateTime, Utc};
 use crate::ApiResponse;
 
@@ -65,9 +65,9 @@ fn render_tag_header(window: &Window, tag: &crate::Tag, terminal_width: i32, dra
 	if (tag.battery_low) {
 		window.addstr(" ");
 		title_line_length += 1;
-		window.attron(COLOR_PAIR(3) | A_BOLD);
+		window.attron(COLOR_PAIR(4) | A_BOLD);
 		window.addstr("Battery low");
-		window.attroff(COLOR_PAIR(3) | A_BOLD);
+		window.attroff(COLOR_PAIR(4) | A_BOLD);
 		title_line_length += get_string_length("Battery low");
 	}
 	else if (tag.unreachable) {
