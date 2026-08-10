@@ -157,9 +157,6 @@ fn render_updated_row(window: &Window, datetime: &str, terminal_width: i32, draw
 	window.addstr(left_border_string);
 	let mut update_line_length = get_string_length(&left_border_string);
 
-	window.addstr("Updated: ");
-	update_line_length += get_string_length("Updated: ");
-
 	let time_ago_string = format_time_ago(datetime);
 	window.addstr(&time_ago_string);
 	update_line_length += get_string_length(&time_ago_string);
