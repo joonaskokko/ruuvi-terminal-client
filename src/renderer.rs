@@ -62,21 +62,21 @@ fn render_tag_header(window: &Window, tag: &crate::Tag, terminal_width: i32, dra
 	window.attroff(COLOR_PAIR(2) | A_BOLD);
 	title_line_length += get_string_length(&tag.tag_name);
 
-	if (tag.battery_low) {
-		window.addstr(" ");
-		title_line_length += 1;
-		window.attron(COLOR_PAIR(4) | A_BOLD);
-		window.addstr("Battery low");
-		window.attroff(COLOR_PAIR(4) | A_BOLD);
-		title_line_length += get_string_length("Battery low");
-	}
-	else if (tag.unreachable) {
+	if (tag.unreachable) {
 		window.addstr(" ");
 		title_line_length += 1;
 		window.attron(COLOR_PAIR(3) | A_BOLD);
 		window.addstr("Unreachable");
 		window.attroff(COLOR_PAIR(3) | A_BOLD);
 		title_line_length += get_string_length("Unreachable");
+	}
+	else if (tag.battery_low) {
+		window.addstr(" ");
+		title_line_length += 1;
+		window.attron(COLOR_PAIR(4) | A_BOLD);
+		window.addstr("Battery low");
+		window.attroff(COLOR_PAIR(4) | A_BOLD);
+		title_line_length += get_string_length("Battery low");
 	}
 
 	if (draw_border) {
